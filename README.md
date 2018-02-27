@@ -1,4 +1,4 @@
-# LiberosScripts
+# Misc Data Analysis Scripts
 Order of operations for batch scoring tasks: 
 
 1) Run BehavioralMarkerBatching.m
