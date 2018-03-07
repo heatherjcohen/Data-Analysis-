@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import glob, os
 #Batching code
-myDir = 'C:\\Users\\span\\Desktop\\Heather Misc\\ForDevelopingScriptsToExtractBehavioralData\\PVTtrytwo\\'
+myDir = 'C:\\Users\\span\\Desktop\\Heather Misc\\PASAT'
 os.chdir(myDir)
 myFiles = glob.glob('output*')
 for file in myFiles:

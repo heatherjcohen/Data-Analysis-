@@ -22,25 +22,44 @@ import pandas as pd
 import numpy as np
 import glob, os
 import re
+import csv
 #
 
-columns=['Stim_Count', 'Response_Count','Missed', 'Correct', 'Wrong']
+columns=['Stim_Count', 'Response_Count','Missed', 'Correct', 'Wrong', 'Dropped']
 PASATdfs=[]
-
+badFiles=[]
 
 def PASATscore(pdframe):
 	Taskname ='PASAT_'
+	filestr=str(file)
 	ID=(re.findall('\\d+', file))
 	dfName = 'Scoringdf_'+str(ID)
-	dfName = pd.DataFrame([[0,0,0,0,0]],columns=columns, index=ID)
-	if len(pdframe)<5:
+	dfName = pd.DataFrame([[0,0,0,0,0,0]],columns=columns, index=ID)
+	twentycountdf= pdframe[pdframe.Markers == 20]
+	TwentyCount = len(twentycountdf)
+	baddies = pd.DataFrame([[0,0]], columns=['filename','issue'], index=ID)
+	if TwentyCount==0:
+		print("This file has no 20s in it, weird.")
+		baddies.filename[ID] =filestr
+		baddies.issue[ID]="No 20s"
+	elif TwentyCount<5:
+		print("This file is suspious.")
+		baddies.filename[ID] =filestr
+		baddies.issue[ID]="Fewer than five 20s"
+	#Skip files with fewer than 5 markers
+	elif len(pdframe)<5:
 		print("This file is too short to be valid.")
 	else:
+		#Create groups based on where the 20s are
 		df1=pdframe.assign(yourid=pdframe.Markers.eq(20).cumsum())
+		#Count the markers that exist between 20s
 		newdf=df1.loc[(df1.yourid<df1.yourid.max())&(df1.yourid>df1.yourid.min())&(df1.Markers!=20),:].groupby('yourid').Markers.value_counts()
+		#Stim_Counts are equal to the number of paired 20s 
 		maxdf = newdf.index.max()
 		dfName.Stim_Count = maxdf[0]
 		MarkerCount=0
+		Dropped = len(pdframe)-len(newdf)-TwentyCount #Need to add the absent 20s to account for them
+		dfName.Dropped= Dropped 
 		for index, value in newdf.iteritems():
 			MarkerCount+=value
 			if index[1] == 21:
@@ -51,6 +70,7 @@ def PASATscore(pdframe):
 				dfName.Missed[0]+=value
 			if index[1] == 23:
 				dfName.Wrong[0]+=value
+		
 	if 'post' in file:
 		print('Looks like a Post')
 		PrePost = 'Post_'
@@ -60,6 +80,7 @@ def PASATscore(pdframe):
 		PrePost = 'Pre_'
 		dfName.columns = [Taskname+ PrePost +x for x in columns]
 	PASATdfs.append(dfName)
+	badFiles.append(baddies)
 	print(dfName)
 
 PVTdfs=[]
@@ -68,7 +89,7 @@ def PVTscore(pdframe):
 	Taskname ='PVT_'
 	ID=(re.findall('\\d+', file))
 	dfName = 'Scoringdf_'+str(ID)
-	dfName = pd.DataFrame([[0,0,0,0,0]],columns=columns, index=ID)
+	dfName = pd.DataFrame([[0,0,0,0,0,0]],columns=columns, index=ID)
 	for index, row in pdframe.iterrows():
 		if row[1] == 3:
 			dfName.Correct[0]+=1
@@ -105,13 +126,17 @@ def Score(csvfile):
 		print('Something weird happened with ', csvfile )
 	return;
 
-myDir = 'C:\\Users\\span\\Desktop\\Heather Misc\\ForDevelopingScriptsToExtractBehavioralData\\'
+myDir = 'C:\\Users\\span\\Desktop\\Heather Misc\\PASAT\\'
 os.chdir(myDir)
 myFiles = glob.glob('*processed*')
 for file in myFiles:
 	file=file.lower()
 	Score(file)
 
+
+if (len(badFiles)>1):
+	bads =pd.concat(badFiles)
+	bads.to_csv('BadFiles.csv')
 
 
 
