@@ -18,8 +18,8 @@ for file in myFiles:
 		print('Looks like a PVT', file)
 		df= pd.read_csv(file)
 		df['ReactionTime'] = abs(df['Relative Time'] - df['Relative Time'].shift(-1))
+		df["ReactionTime"]=df['ReactionTime'].shift(2)
 		outFile = 'TimeMarkerProcessed' +file
-		df=df.transpose()
 		df.to_csv(outFile)
 	else:
 		print('Something weird happened with ', file )
