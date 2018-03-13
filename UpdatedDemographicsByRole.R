@@ -131,6 +131,8 @@ stat.desc(data$MinutesPorn[data$MinutesPorn!=0][data$Role==2])
 #### Percentage of people who answered 0 to the vibe question) 
 sum(data$MinutesVibrator[data$Role==1] %in% 0 ) / nrow(data)
 sum(data$MinutesVibrator[data$Role==2] %in% 0 ) / nrow(data)
+sum(data$MinutesVibrator%in% 0 ) / nrow(data)
+
 
 ## stats excluding the 0 vibe people
 stat.desc(data$MinutesVibrator[data$MinutesVibrator!=0]) 
