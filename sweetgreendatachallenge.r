@@ -7,6 +7,7 @@ library(gridExtra)
 library(scales)
 library(car)
 library(plotly)
+library(chron)
 library(plyr)
 library(scales)
 recode <- car::recode
@@ -35,6 +36,8 @@ total$date <- format(as.POSIXct(total$created_at,format='%m/%d/%Y %H:%M:%S'),for
 total$month <- format(as.POSIXct(total$created_at,format='%m/%d/%Y %H:%M:%S'),format='%b')
 
 total$date <- as.Date(total$date, "%m/%d/%Y")
+
+################################################  Inspect for trends
 
 NumberOfOrdersByID<-tally(group_by(total, user_id))
 colnames(NumberOfOrdersByID) <- c("User_id", "# of orders")
@@ -75,40 +78,97 @@ colnames(AveAmountByMonth) <- c("Month", "Average Amount Spent")
 #Highest spending per user
 orderedData = AmountByUser[order(AmountByUser[,2], decreasing = TRUE),]
 topUser = orderedData$User_Id[1:20]
-topAllData = total[total$user_id %in% topUser,]
+topAllData = totals[totals$user_id %in% topUser,]
 #Greatest number of orders
 orderedData2 = NumberOfOrdersByID2[order(NumberOfOrdersByID2[,2], decreasing = TRUE),]
 topUser2 =orderedData2$user_id[1:20]
-topAllData2 = total[total$user_id %in% topUser2,]
+topAllData2 = totals[totals$user_id %in% topUser2,]
 #Highest Average Order Amount
 orderedData3 = AveAmountByUser[order(AveAmountByUser[,2], decreasing = TRUE),]
 topUser3 = orderedData3$User_Id[1:20]
-topAllData3 = total[total$user_id %in% topUser3,]
+topAllData3 = totals[totals$user_id %in% topUser3,]
 
-total <- rbind(topAllData, topAllData2)
-total2<-rbind(total, topAllData3)
+totals <- rbind(topAllData, topAllData2)
+total2<-rbind(totals, topAllData3)
 #####This is the dataframe that holds all the high value user_ids and their order_ids
 total3<-total2[!duplicated(total2), ]
-#################################################################Plots####################
+################################################################# Characterize High Value ####################
 
-
-
-ggplot(aes(x=date, y=spend_amount), data=sample) + geom_line() +stat_smooth(colour='blue', span=0.2)
-
-ggplot(data = sample, aes(x = date, y = spend_amount))+
-  geom_line(color = "#00AFBB")
+total3$time <- as.POSIXct(total3$time,format="%H:%M:%S",tz="PST")
 
 
 
 
-ggplot(sample, aes(date, spend_amount)) +
+#Line
+ggplot(aes(x=date, y=spend_amount), data=total3) + geom_line() +stat_smooth(colour='blue', span=0.2)
+
+#Dot
+ggplot(total3, aes(date, spend_amount)) +
   geom_point() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + geom_smooth(method=lm)
 
-
-ggplot(total, aes(date, spend_amount)) +
-  geom_point() +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + geom_smooth(method=lm)
+#Even with smaller sample, box plots still are super squished 
+ggplot(total3, aes(x=date, y=spend_amount))+ geom_boxplot(aes(group=month))
 
 
-ggplot(sample, aes(x=date, y=spend_amount))+ geom_boxplot(aes(group=month))
+AmountByName3<-aggregate(total3$spend_amount, by=list(Category=total3$name), FUN=sum)
+colnames(AmountByName3) <- c("Location Name", "Total Amount Spent")
+
+ggplot(total3, aes(name, spend_amount, fill=state)) +
+  geom_col()+theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+ggplot(total3, aes(date, spend_amount, fill=month)) +
+  geom_col()+theme(axis.text.x = element_text(angle = 90, hjust = 1))+ geom_hline(yintercept = mean(total3$spend_amount), color="blue")
+
+ggplot(total3, aes(date, spend_amount, fill=state)) +
+  geom_col()+theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+ggplot(total3, aes(time, spend_amount, fill=state)) +
+  geom_col()+theme(axis.text.x = element_text(angle = 90, hjust = 1))+ facet_grid(state ~ .)
+
+ggplot(data=total3, aes(total3$user_id, fill=state)) + geom_histogram()+ theme(axis.text.x = element_text(angle=45))
+ggplot(data=total3, aes(total3$order_id, fill=state)) + geom_histogram()+ theme(axis.text.x = element_text(angle=45))
+
+ggplot(total, aes(name, spend_amount, fill=state)) +
+  geom_col()+theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+ggplot(data=total3, aes(total3$name, fill=state)) + geom_histogram(stat="count")+ theme(axis.text.x = element_text(angle=45))
+
+ggplot(data=topAllData2, aes(topAllData2$name, fill=state)) + geom_histogram(stat="count")+ theme(axis.text.x = element_text(angle=45))
+##################################Add in item info
+items<-read.csv(file="C:\\Users\\span\\Desktop\\Heather Misc\\Personal\\sweetgreen analytics exercise 20180205\\items 20180205.csv", header = TRUE, sep = ",")
+#looks like there's always two identical line items for each order -- that's probably wrong? 
+
+#It's weird that the ids don't match
+items$order_id <- as.numeric(gsub(",", "", items$order_id))
+items$id  <- as.numeric(gsub(",", "", items$id))
+
+#Ohhey, they do just fine after they're the same type and have no commas *facepalm*
+intersect(items$order_id,orders$order_id)
+intersect(items$id,orders$order_id)
+
+highrollersbought <- merge(total3,items,by="order_id")
+
+####### Characterize items
+itemdf<-count(items, 'item_name')
+itemdf<-itemdf[order(itemdf[,2], decreasing = TRUE),]
+itemdf2<-itemdf[1:20,]
+
+ggplot(data=itemdf2, aes(x=item_name, y=freq, fill=item_name)) +
+  geom_bar(stat="identity") + theme(axis.text.x = element_text(angle=45))
+
+itemdf3<-count(highrollersbought, 'item_name')
+itemdf3<-itemdf3[order(itemdf3[,2], decreasing = TRUE),]
+itemdf4<-itemdf3[1:20,]
+
+ggplot(data=itemdf4, aes(x=item_name, y=freq, fill=item_name)) +
+  geom_bar(stat="identity") + theme(axis.text.x = element_text(angle=45))
+
+
+ggplot(data=highrollersbought, aes(x=name, y=spend_amount, fill=item_name)) +
+  geom_bar(stat="identity") + theme(axis.text.x = element_text(angle=45))
+
+ByUserByLocation2 <- aggregate(highrollersbought$spend_amount, by = list(highrollersbought$user_id, highrollersbought$item_name), FUN=sum)
+ByUserByLocation3 <- aggregate(highrollersbought$spend_amount, by = list(highrollersbought$name, highrollersbought$item_name), FUN=sum)
+
+
