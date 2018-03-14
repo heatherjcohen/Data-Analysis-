@@ -15,26 +15,25 @@ recode <- car::recode
 # Read
 ##############################################################################
 #Windows
-#Heather updated to change to newest file and fixed syntax
+#Import orders and locations
 orders<-read.csv(file="C:\\Users\\span\\Desktop\\Heather Misc\\Personal\\sweetgreen analytics exercise 20180205\\orders 20180205.csv", header = TRUE, sep = ",")
 locations<-read.csv(file="C:\\Users\\span\\Desktop\\Heather Misc\\Personal\\sweetgreen analytics exercise 20180205\\locations 20180111.csv", header = TRUE, sep = ",")
 
+#change file types 
 orders$location_id <- as.numeric(gsub(",", "", orders$location_id))
 orders$spend_amount <- as.numeric(gsub(",", "", orders$spend_amount))
 orders$order_id <- as.numeric(gsub(",", "", orders$order_id))
 orders$user_id  <- as.numeric(gsub(",", "", orders$user_id))
 orders$earn_amount <- as.numeric(gsub(",", "", orders$earn_amount))
 orders$created_at<-as.POSIXct(orders$created_at, ("%Y-%m-%d %H:%M:%S"))
-
 locations$location_id <- as.numeric(gsub(",", "", locations$location_id))
-
+#examine
 summary(orders)
-
+#create mega merged dataframe of everything 
 total <- merge(orders,locations,by="location_id")
 total$time<-format(as.POSIXct(total$created_at,format='%m/%d/%Y %H:%M:%S'),format='%H:%M:%S')
 total$date <- format(as.POSIXct(total$created_at,format='%m/%d/%Y %H:%M:%S'),format='%m/%d/%Y')
 total$month <- format(as.POSIXct(total$created_at,format='%m/%d/%Y %H:%M:%S'),format='%b')
-
 total$date <- as.Date(total$date, "%m/%d/%Y")
 
 ################################################  Inspect for trends
@@ -93,12 +92,7 @@ total2<-rbind(totals, topAllData3)
 #####This is the dataframe that holds all the high value user_ids and their order_ids
 total3<-total2[!duplicated(total2), ]
 ################################################################# Characterize High Value ####################
-
-total3$time <- as.POSIXct(total3$time,format="%H:%M:%S",tz="PST")
-
-
-
-
+#making plots out of the whole dataset made my computer fan real stressed out -- best to just plot the high value subset 
 #Line
 ggplot(aes(x=date, y=spend_amount), data=total3) + geom_line() +stat_smooth(colour='blue', span=0.2)
 
@@ -147,6 +141,7 @@ items$id  <- as.numeric(gsub(",", "", items$id))
 intersect(items$order_id,orders$order_id)
 intersect(items$id,orders$order_id)
 
+#create dataframe with what high rollers bought
 highrollersbought <- merge(total3,items,by="order_id")
 
 ####### Characterize items
@@ -171,4 +166,6 @@ ggplot(data=highrollersbought, aes(x=name, y=spend_amount, fill=item_name)) +
 ByUserByLocation2 <- aggregate(highrollersbought$spend_amount, by = list(highrollersbought$user_id, highrollersbought$item_name), FUN=sum)
 ByUserByLocation3 <- aggregate(highrollersbought$spend_amount, by = list(highrollersbought$name, highrollersbought$item_name), FUN=sum)
 
-
+#export out data sets
+write.csv(total3, "High Value Subset.csv")
+write.csv(highrollersbought, "High Value Subset With Items Bought.csv")
