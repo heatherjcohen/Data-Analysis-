@@ -18,7 +18,7 @@ for file in myFiles:
 		print('Looks like a PVT', file)
 		df= pd.read_csv(file)
 		df['ReactionTime'] = abs(df['Relative Time'] - df['Relative Time'].shift(-1))
-		df["ReactionTime"]=df['ReactionTime'].shift(2)
+		df["ReactionTime"]=df['ReactionTime'].shift(1)
 		outFile = 'TimeMarkerProcessed' +file
 		df.to_csv(outFile)
 	else:

@@ -4,7 +4,7 @@ import numpy as np
 import glob, os
 import re
 
-data = pd.read_csv("C:\\Users\\span\\Desktop\\Heather Misc\\ForDevelopingScriptsToExtractBehavioralData\\PVTtrytwo\\PVT Reaction Time Data.csv")
+data = pd.read_csv("C:\\Users\\span\\Desktop\\Heather Misc\\ForDevelopingScriptsToExtractBehavioralData\\PVTtrytwo\\PVT Reaction Time Data 3.csv")
 data = data.apply(pd.to_numeric, errors='coerce', axis=1)
 
 def justify(a, invalid_val=0, axis=1, side='left'):    
@@ -44,4 +44,4 @@ data = data.set_index('ID')\
   )\
   .dropna(how='all')
 
-data.to_csv("C:\\Users\\span\\Desktop\\Heather Misc\\ForDevelopingScriptsToExtractBehavioralData\\PVTtrytwo\\PVT Reaction Time Data PROCESSED.csv")
+data.to_csv("C:\\Users\\span\\Desktop\\Heather Misc\\ForDevelopingScriptsToExtractBehavioralData\\PVTtrytwo\\PVT Reaction Time Data 3 PROCESSED.csv")

@@ -5,7 +5,9 @@ import numpy as np
 import glob, os
 import re
 
-data = pd.read_csv("C:\\Users\\span\\Desktop\\Heather Misc\\PASAT\\PASAT Only Behavioral Data Summary.csv")
+#####This is an all purpose script for when any of the batching scripts create TWO lines per ID and you want to merge them into ONE 
+
+data = pd.read_csv("C:\\Users\\span\\Desktop\\Heather Misc\\ForDevelopingScriptsToExtractBehavioralData\\PVTtrytwo\\PVT Weird Pattern Spotting.csv")
 data = data.drop(['ID'], axis=1)
 data = data.apply(pd.to_numeric, errors='coerce', axis=1)
 
@@ -46,4 +48,4 @@ data = data.set_index('Ids')\
   )\
   .dropna(how='all')
 
-data.to_csv("C:\\Users\\span\\Desktop\\Heather Misc\\PASAT\\PASAT Only Behavioral Data Summary PROCESSED.csv")
+data.to_csv("C:\\Users\\span\\Desktop\\Heather Misc\\ForDevelopingScriptsToExtractBehavioralData\\PVTtrytwo\\PVT Weird Pattern Spotting Adjusted.csv")
